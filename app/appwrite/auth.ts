@@ -83,27 +83,41 @@ export const logoutUser = async () => {
 
 export const getUser = async () => {
     try {
-        const user = await account.get(); // This throws if not logged in
+        // First check if we have a session
+        const sessions = await account.listSessions();
+        if (!sessions.sessions.length) {
+            return redirect("/sign-in");
+        }
+
+        // Get current user
+        const user = await account.get();
+        if (!user) {
+            console.error("No user found in session");
+            return redirect("/sign-in");
+        }
+
+        // Get user data from database
         const { documents } = await database.listDocuments(
             appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
-            [
-                Query.equal("accountId", user.$id),
-                Query.select(["name", "email", "imageUrl", "joinedAt", "accountId"]),
-            ]
+            [Query.equal("accountId", user.$id)]
         );
 
-        return documents.length > 0 ? documents[0] : redirect("/sign-in");
-    } catch (error: any) {
-        if (error.code === 401) {
-            // Unauthenticated
+        if (!documents.length) {
+            console.error("No user data found in database for account:", user.$id);
             return redirect("/sign-in");
         }
+
+        return documents[0];
+    } catch (error: any) {
         console.error("Error fetching user:", error);
+        if (error.code === 401) {
+            console.error("User not authenticated");
+            return redirect("/sign-in");
+        }
         return null;
     }
 };
-
 
 export const getAllUsers = async (limit: number, offset: number) => {
     try {
