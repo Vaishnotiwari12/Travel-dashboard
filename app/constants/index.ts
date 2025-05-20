@@ -20,6 +20,12 @@ export const sidebarItems = [
     label: "AI Trips",
     href: "/trips",
   },
+  {
+    id: 5,
+    icon: "/assets/icons/home.svg",
+    label: "Home",
+    href: "/",
+  },
 ];
 
 export const chartOneData: object[] = [
@@ -102,18 +108,34 @@ export const comboBoxItems = {
   budget: budgetOptions,
 } as Record<keyof TripFormData, string[]>;
 
-export const userXAxis: AxisModel = { valueType: "Category", title: "Day" };
+export const userXAxis: AxisModel = { 
+  valueType: "Category", 
+  title: "Day",
+  labelRotation: -45,
+  labelIntersectAction: "Rotate45",
+  edgeLabelPlacement: "Shift",
+  majorGridLines: { width: 0 },
+  minorGridLines: { width: 0 }
+};
+
 export const useryAxis: AxisModel = {
   minimum: 0,
   maximum: 10,
   interval: 2,
   title: "Count",
+  labelFormat: "{value}",
+  majorGridLines: { width: 0 },
+  minorGridLines: { width: 0 }
 };
 
 export const tripXAxis: AxisModel = {
   valueType: "Category",
   title: "Travel Styles",
+  labelRotation: -45,
+  labelIntersectAction: "Rotate45",
+  edgeLabelPlacement: "Shift",
   majorGridLines: { width: 0 },
+  minorGridLines: { width: 0 }
 };
 
 export const tripyAxis: AxisModel = {
@@ -121,6 +143,9 @@ export const tripyAxis: AxisModel = {
   maximum: 10,
   interval: 2,
   title: "Count",
+  labelFormat: "{value}",
+  majorGridLines: { width: 0 },
+  minorGridLines: { width: 0 }
 };
 
 export const CONFETTI_SETTINGS = {
