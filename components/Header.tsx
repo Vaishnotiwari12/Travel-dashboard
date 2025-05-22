@@ -9,9 +9,13 @@ interface Props {
     description: string;
     ctaText?: string;
     ctaUrl?: string;
+    user?: {
+        name: string;
+        imageUrl?: string;
+    };
 }
 
-const Header = ({ title, description, ctaText, ctaUrl }: Props) => {
+const Header = ({ title, description, ctaText, ctaUrl, user }: Props) => {
     const location = useLocation();
 
     return (
@@ -20,6 +24,19 @@ const Header = ({ title, description, ctaText, ctaUrl }: Props) => {
                 <h1 className={cn("text-dark-100",  location.pathname === '/' ? 'text-2xl md:text-4xl font-bold': 'text-xl md:text-2xl font-semibold')}>{title}</h1>
                 <p className={cn("text-gray-100 font-normal",  location.pathname === '/' ? 'text-base md:text-lg': 'text-sm md:text-lg')}>{description}</p>
             </article>
+
+            {user ? (
+                <div className="flex items-center gap-2">
+                    {user.imageUrl && (
+                        <img 
+                            src={user.imageUrl} 
+                            alt={user.name} 
+                            className="w-8 h-8 rounded-full" 
+                        />
+                    )}
+                    <span className="text-gray-100">{user.name}</span>
+                </div>
+            ) : null}
 
             {ctaText && ctaUrl && (
                 <Link to={ctaUrl}>
