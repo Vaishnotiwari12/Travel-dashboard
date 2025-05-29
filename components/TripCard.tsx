@@ -1,22 +1,39 @@
 import {Link, useLocation} from "react-router";
-import {ChipDirective, ChipListComponent, ChipsDirective} from "@syncfusion/ej2-react-buttons";
 import {cn, getFirstWord} from "~/lib/utils";
+import {ChipDirective, ChipListComponent, ChipsDirective} from "@syncfusion/ej2-react-buttons";
 
-const TripCard = ({ id, name, location, imageUrl, tags, price }: TripCardProps) => {
+interface TripCardProps {
+    id: string;
+    name: string;
+    location: string;
+    imageUrl: string;
+    tags: string[];
+    price: string;
+}
+
+export default function TripCard({ id, name, location, imageUrl, tags, price }: TripCardProps) {
     const path = useLocation();
 
     return (
         <Link to={path.pathname === '/' || path.pathname.startsWith('/travel') ? `/travel/${id}` : `/trips/${id}`} className="trip-card">
-            <img src={imageUrl} alt={name} />
+            <img 
+                src={imageUrl} 
+                alt={name} 
+                onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.src = '/assets/images/default-trip.jpg';
+                }}
+            />
 
             <article>
                 <h2>{name}</h2>
                 <figure>
                     <img
-                        src="/assets/icons/location-mark.svg"
-                        alt="location" className="size-4"
+                        src="/assets/images/david.webp"
+                        alt="user"
+                        className="size-4 rounded-full aspect-square"
                     />
-                    <figcaption>{location}</figcaption>
+                    <p className="text-xs font-normal text-white">{tags.length} activities</p>
                 </figure>
             </article>
 
@@ -36,8 +53,7 @@ const TripCard = ({ id, name, location, imageUrl, tags, price }: TripCardProps) 
                 </ChipListComponent>
             </div>
 
-            <article className="tripCard-pill">{price}</article>
+            <article className="tripCard-pill">${price}</article>
         </Link>
-    )
+    );
 }
-export default TripCard
