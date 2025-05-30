@@ -4,22 +4,45 @@ import {MobileSidebar, NavItems} from "../../../components";
 import {account} from "~/appwrite/client";
 import {getExistingUser, storeUserData} from "~/appwrite/auth";
 
-export async function clientLoader() {
+interface UserStatus {
+    status: 'user' | 'admin' | 'superadmin';
+    $id: string;
+    [key: string]: any;
+}
+
+export async function clientLoader(): Promise<UserStatus | { type: 'redirect'; pathname: string }> {
     try {
         const user = await account.get();
-
-        if(!user.$id) return redirect('/sign-in');
+        
+        if (!user?.$id) {
+            console.error('User not authenticated');
+            return { type: 'redirect', pathname: '/sign-in' };
+        }
 
         const existingUser = await getExistingUser(user.$id);
 
-        if(!existingUser?.isAdmin) {
-            return redirect('/');
+        if (!existingUser) {
+            console.error('User not found in database');
+            return { type: 'redirect', pathname: '/sign-in' };
         }
 
-        return existingUser;
-    } catch (e) {
-        console.error('Error in clientLoader:', e);
-        return redirect('/sign-in');
+        // Check if user has admin privileges
+        if (!existingUser.status || (existingUser.status !== 'admin' && existingUser.status !== 'superadmin')) {
+            console.log('User does not have admin privileges');
+            return { type: 'redirect', pathname: '/' };
+        }
+
+        // Ensure all required properties exist
+        const userStatus: UserStatus = {
+            ...existingUser,
+            status: existingUser.status,
+            $id: existingUser.$id
+        };
+
+        return userStatus;
+    } catch (error) {
+        console.error('Error in admin layout loader:', error);
+        return { type: 'redirect', pathname: '/sign-in' };
     }
 }
 
