@@ -10,16 +10,74 @@ import {ButtonComponent} from "@syncfusion/ej2-react-buttons";
 import {account} from "~/appwrite/client";
 import {useNavigate} from "react-router";
 
-export const loader = async () => {
-    const response = await fetch('https://restcountries.com/v3.1/all');
-    const data = await response.json();
+const COUNTRY_CACHE_KEY = 'cached_countries';
 
-    return data.map((country: any) => ({
-        name: country.flag + country.name.common,
-        coordinates: country.latlng,
-        value: country.name.common,
-        openStreetMap: country.maps?.openStreetMap,
-    }))
+export const loader = async () => {
+    try {
+        // Use a more efficient API endpoint that only returns needed fields
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name,latlng,flags,maps');
+        if (!response.ok) {
+            throw new Error('Failed to fetch countries');
+        }
+        
+        const data = await response.json();
+        
+        return data.map((country: any) => ({
+            name: country.name.common,
+            flagUrl: country.flags.png,
+            coordinates: country.latlng,
+            value: country.name.common,
+            openStreetMap: country.maps?.openStreetMap,
+        }));
+    } catch (error) {
+        console.error('Error fetching countries:', error);
+        throw error;
+    }
+}
+
+// Client-side loader for caching
+export const clientLoader = async () => {
+    try {
+        // Try to get from cache first
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const cachedData = localStorage.getItem(COUNTRY_CACHE_KEY);
+            if (cachedData) {
+                return JSON.parse(cachedData);
+            }
+        }
+
+        // Fetch fresh data
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name,latlng,flags,maps');
+        if (!response.ok) {
+            throw new Error('Failed to fetch countries');
+        }
+        
+        const data = await response.json();
+        const countries = data.map((country: any) => ({
+            name: country.name.common,
+            flagUrl: country.flags.png,
+            coordinates: country.latlng,
+            value: country.name.common,
+            openStreetMap: country.maps?.openStreetMap,
+        }));
+
+        // Cache the data for 24 hours
+        if (typeof window !== 'undefined' && window.localStorage) {
+            localStorage.setItem(COUNTRY_CACHE_KEY, JSON.stringify(countries));
+        }
+        
+        return countries;
+    } catch (error) {
+        console.error('Error fetching countries:', error);
+        // If fetching fails, try to use cached data as fallback
+        if (typeof window !== 'undefined' && window.localStorage) {
+            const cachedFallback = localStorage.getItem(COUNTRY_CACHE_KEY);
+            if (cachedFallback) {
+                return JSON.parse(cachedFallback);
+            }
+        }
+        throw error;
+    }
 }
 
 const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
@@ -66,12 +124,12 @@ const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
        }
 
        try {
-           const response = await fetch('/api/create-trip', {
+           const response = await fetch(`/api/create-trip`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json'},
                body: JSON.stringify({
                    country: formData.country,
-                   numberOfDays: formData.duration,
+                   numberOfDays: parseInt(formData.duration.toString()),
                    travelStyle: formData.travelStyle,
                    interests: formData.interest,
                    budget: formData.budget,
@@ -80,10 +138,21 @@ const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
                })
            })
 
-           const result: CreateTripResponse = await response.json();
+           if (!response.ok) {
+               const errorText = await response.text();
+               console.error('API Error:', errorText);
+               setError('Failed to create trip. Please try again.');
+               setLoading(false);
+               return;
+           }
 
-           if(result?.id) navigate(`/trips/${result.id}`)
-           else console.error('Failed to generate a trip')
+           const result = await response.json();
+           if (result?.id) {
+               navigate(`/trips/${result.id}`);
+           } else {
+               setError('Failed to create trip');
+               setLoading(false);
+           }
        } catch (e) {
            console.error('Error generating trip', e);
        } finally {
@@ -138,6 +207,17 @@ const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
                                         value: country.value
                                     })))
                                 )
+                            }}
+                            popupHeight="300px"
+                            popupWidth="300px"
+                            itemTemplate={(e: { text: string, value: string }) => {
+                                const country = countries.find(c => c.value === e.value);
+                                return (
+                                    <div className="flex items-center gap-0.001">
+                                        <img src={country?.flagUrl || ''} alt={e.text} className="w-4 h-4" />
+                                        {e.text}
+                                    </div>
+                                );
                             }}
                         />
                     </div>
