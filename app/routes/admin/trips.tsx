@@ -1,6 +1,6 @@
 import {Header, TripCard} from "../../../components";
 import {type LoaderFunctionArgs, useSearchParams} from "react-router";
-import {getAllTrips, getTripById} from "~/appwrite/trips";
+import {getAllTrips, getTripById} from "../../appwrite/trips";
 import {parseTripData} from "~/lib/utils";
 import type {Route} from './+types/trips'
 import {useState} from "react";
@@ -13,15 +13,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const offset = (page - 1) * limit;
 
     const { allTrips, total } = await getAllTrips(limit, offset);
-
     return {
-        trips: allTrips.map(({ $id, tripDetails, imageUrls }) => ({
-            id: $id,
-            ...parseTripData(tripDetails),
-            imageUrls: imageUrls ?? []
-        })),
-        total
-    }
+      trips: allTrips.map(({ $id, tripDetails, imageUrls }) => ({
+          id: $id,
+          ...parseTripData(tripDetails),
+          imageUrls: imageUrls ?? []
+      })),
+      total
+  }
 }
 
 const Trips = ({ loaderData }: Route.ComponentProps) => {
@@ -77,3 +76,6 @@ const Trips = ({ loaderData }: Route.ComponentProps) => {
     )
 }
 export default Trips
+
+
+
